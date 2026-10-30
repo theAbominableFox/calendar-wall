@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Home Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="side">
+    <section class="clock card">
+      <div id="time" class="time">--:--</div>
+      <div id="date" class="date"></div>
+    </section>
+
+    <section class="weather card">
+      <div class="today-label muted small">Today</div>
+      <button id="weather-loc" class="loc-btn muted small" title="Change location">📍 …</button>
+      <div id="loc-picker" class="loc-picker" hidden>
+        <div class="loc-search">
+          <input id="loc-input" type="search" enterkeyhint="search" placeholder="Search for a city…" autocomplete="off">
+          <button id="loc-close" class="btn loc-close" title="Close" aria-label="Close">✕</button>
+        </div>
+        <div id="loc-results" class="loc-results"></div>
+        <button id="loc-device" class="btn">Use this device's location</button>
+      </div>
+      <div class="weather-now">
+        <div id="weather-icon" class="weather-icon">…</div>
+        <div>
+          <div id="weather-temp" class="weather-temp">--°</div>
+          <div id="weather-desc" class="muted">Loading weather…</div>
+        </div>
+      </div>
+      <div id="weather-details" class="weather-details"></div>
+      <div id="weather-days" class="weather-days"></div>
+    </section>
+  </aside>
+
+  <section class="calendar card">
+    <div class="calendar-head">
+      <h2 id="range-label">Next 4 weeks</h2>
+      <div class="calendar-actions">
+        <span id="sync-status" class="muted small"></span>
+        <button id="refresh-btn" class="btn" hidden>Refresh</button>
+        <button id="fullscreen-btn" class="btn" hidden>⛶ Full screen</button>
+        <button id="close-btn" class="btn" hidden>✕ Close</button>
+      </div>
+    </div>
+    <div id="weekdays" class="weekdays"></div>
+    <div id="grid" class="grid"></div>
+  </section>
+
+  <div id="event-popup" class="popup" hidden></div>
+
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ical.js@1.5.0/build/ical.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
