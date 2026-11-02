@@ -37,7 +37,12 @@
 
   <section class="calendar card">
     <div class="calendar-head">
-      <h2 id="range-label">Next 4 weeks</h2>
+      <div class="range-nav">
+        <button id="prev-week" class="btn nav-btn" title="Previous week" aria-label="Previous week">‹</button>
+        <h2 id="range-label">Next 4 weeks</h2>
+        <button id="next-week" class="btn nav-btn" title="Next week" aria-label="Next week">›</button>
+        <button id="today-btn" class="btn" hidden>Today</button>
+      </div>
       <div class="calendar-actions">
         <span id="sync-status" class="muted small"></span>
         <button id="refresh-btn" class="btn" hidden>Refresh</button>

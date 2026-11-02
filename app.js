@@ -13,10 +13,13 @@
     return new Date(y, m - 1, d);
   };
 
+  // Weeks the view is moved from the current one with the arrows (0 = starts this week).
+  let weekOffset = 0;
+
   function rangeStart() {
     const today = startOfDay(new Date());
     const ws = CFG.weekStartsOn ?? 1;
-    return addDays(today, -((today.getDay() - ws + 7) % 7));
+    return addDays(today, -((today.getDay() - ws + 7) % 7) + 7 * weekOffset);
   }
 
   // ---------- Clock ----------
@@ -210,31 +213,88 @@
     $("refresh-btn").hidden = false;
     setStatus("Syncing…");
 
-    const start = rangeStart();
-    const end = addDays(start, DAYS);
     const failed = [];
     const perCal = await Promise.all(cals.map(async (c, i) => {
       const cal = { name: c.name, color: c.color || PALETTE[i % PALETTE.length] };
       try {
         const res = await fetch(`/api/ical/${i}`);
         if (!res.ok) throw new Error((await res.json()).error || `HTTP ${res.status}`);
-        return parseIcs(await res.text(), start, end, cal);
+        return { cal, text: await res.text() };
       } catch (err) {
         console.error(`${cal.name}:`, err);
         failed.push({ name: cal.name, reason: err.message });
-        return [];
+        return null;
       }
     }));
 
-    events = perCal.flat();
+    feeds = perCal.filter(Boolean);
+    failed.push(...buildEvents());
     syncErrors = failed;
     const time = new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
     setStatus(failed.length
       ? `Couldn't load: ${failed.map((f) => f.name).join(", ")} · ${time} · tap for details`
       : `Synced ${time}`);
     $("sync-status").classList.toggle("has-errors", failed.length > 0);
-    renderCalendar();
   }
+
+  // Feed texts from the last sync, so moving between weeks re-expands them without refetching.
+  let feeds = [];
+
+  // Expands the feeds for the visible range and redraws; returns the feeds that failed to parse.
+  function buildEvents() {
+    const start = rangeStart();
+    const end = addDays(start, DAYS);
+    const failed = [];
+    events = feeds.flatMap(({ cal, text }) => {
+      try {
+        return parseIcs(text, start, end, cal);
+      } catch (err) {
+        console.error(`${cal.name}:`, err);
+        failed.push({ name: cal.name, reason: err.message });
+        return [];
+      }
+    });
+    renderCalendar();
+    return failed;
+  }
+
+  // Arrows move the view a week at a time; it returns to the current weeks after 2 idle minutes,
+  // so a wall display doesn't stay on another month.
+  let weekResetTimer;
+  function setWeekOffset(n) {
+    const dir = Math.sign(n - weekOffset);
+    const old = [...$("grid").querySelectorAll(".week:not(.week-ghost)")];
+    const outgoing = dir > 0 ? old[0] : old[old.length - 1];
+    const outHeight = outgoing?.offsetHeight;
+    weekOffset = n;
+    $("today-btn").hidden = n === 0;
+    clearTimeout(weekResetTimer);
+    if (n !== 0) weekResetTimer = setTimeout(() => setWeekOffset(0), 2 * 60 * 1000);
+    buildEvents();
+    if (dir && outgoing) slideWeeks(dir, outgoing, outHeight);
+  }
+
+  // Slides the rows up (forward) or down (back) by one week: the new rows start one row
+  // away from their place, and a copy of the week that left slides out past the edge.
+  function slideWeeks(dir, outgoing, outHeight) {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const grid = $("grid");
+    const weeks = [...grid.querySelectorAll(".week")];
+    if (weeks.length < 2) return;
+    const step = weeks[1].offsetTop - weeks[0].offsetTop;
+    const ghost = outgoing.cloneNode(true);
+    ghost.classList.add("week-ghost");
+    ghost.style.height = `${outHeight}px`;
+    ghost.style.top = `${dir > 0 ? weeks[0].offsetTop - step : weeks[weeks.length - 1].offsetTop + step}px`;
+    grid.append(ghost);
+    const frames = [{ transform: `translateY(${dir * step}px)` }, { transform: "none" }];
+    const opts = { duration: 350, easing: "cubic-bezier(.2, .7, .3, 1)" };
+    for (const w of weeks) w.animate(frames, opts);
+    ghost.animate(frames, opts).finished.then(() => ghost.remove(), () => ghost.remove());
+  }
+  $("prev-week").addEventListener("click", () => setWeekOffset(weekOffset - 1));
+  $("next-week").addEventListener("click", () => setWeekOffset(weekOffset + 1));
+  $("today-btn").addEventListener("click", () => setWeekOffset(0));
 
   // Tapping the status after a failed sync shows why each calendar failed.
   let syncErrors = [];
