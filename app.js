@@ -25,9 +25,6 @@
     const hm = now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
     const s = String(now.getSeconds()).padStart(2, "0");
     $("time").innerHTML = `${hm}<span class="sec">${s}</span>`;
-    $("date").textContent = now.toLocaleDateString(undefined, {
-      weekday: "long", day: "numeric", month: "long", year: "numeric",
-    });
   }
 
   // ---------- Weather (Open-Meteo, no API key) ----------
@@ -89,7 +86,7 @@
         latitude: location.latitude,
         longitude: location.longitude,
         current: "temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m",
-        daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,sunrise,sunset,uv_index_max",
+        daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,sunrise,sunset",
         timezone: "auto",
         forecast_days: 16,
         temperature_unit: unit,
@@ -113,9 +110,7 @@
         ["Rain", `${dl.precipitation_probability_max?.[0] ?? "–"}% · ${dl.precipitation_sum?.[0] ?? 0} mm`],
         ["Humidity", `${c.relative_humidity_2m}%`],
         ["Wind", `${Math.round(c.wind_speed_10m)} km/h`],
-        ["UV index", `${Math.round(dl.uv_index_max?.[0] ?? 0)}`],
-        ["Sunrise", `🌅 ${hm(dl.sunrise[0])}`],
-        ["Sunset", `🌇 ${hm(dl.sunset[0])}`],
+        ["Sunrise / Sunset", `🌅&nbsp;${hm(dl.sunrise[0])} 🌇&nbsp;${hm(dl.sunset[0])}`],
       ];
       $("weather-details").innerHTML = details
         .map(([k, v]) => `<div><span class="muted small">${k}</span><b>${v}</b></div>`).join("");
